@@ -1,22 +1,13 @@
 import fs from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { parse as parseCsv } from 'csv-parse/sync';
+import { extractText, getDocumentProxy } from 'unpdf';
 import type { DocumentType, ParsedDocument } from '../types.js';
 
-const require = createRequire(import.meta.url);
-
-/**
- * Use the library entry (not the package root). The package root of `pdf-parse`
- * executes a debug/test harness that looks for `./test/data/...` and crashes
- * on Render / production when that file is absent.
- */
 async function parsePdfBuffer(buffer: Buffer): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require('pdf-parse/lib/pdf-parse.js') as (
-    data: Buffer,
-  ) => Promise<{ text: string }>;
-  const result = await pdfParse(buffer);
-  return result.text ?? '';
+  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const result = await extractText(pdf, { mergePages: true });
+  const text = result.text as string | string[];
+  return (Array.isArray(text) ? text.join('\n') : text).trim();
 }
 
 export async function parseDocumentFile(
@@ -27,7 +18,7 @@ export async function parseDocumentFile(
 
   if (fileType === 'pdf') {
     const text = await parsePdfBuffer(buffer);
-    return { text: text.trim(), parser: 'pdf-parse' };
+    return { text: text.trim(), parser: 'unpdf' };
   }
 
   if (fileType === 'csv') {
