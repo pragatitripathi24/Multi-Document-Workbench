@@ -1,6 +1,6 @@
 # Render Blueprint — one free Web Service hosts API + built React UI together.
 # Dashboard: New → Blueprint → connect this repo → apply.
-# Do NOT put secrets in this file. Set env vars in the Render dashboard if needed.
+# Do NOT put secrets in this file.
 
 services:
   - type: web
@@ -9,14 +9,14 @@ services:
     plan: free
     region: oregon
     rootDir: .
-    buildCommand: npm install && npm run build
+    # --include=dev is required: Vite/TypeScript/Prisma CLI live in devDependencies.
+    # Do NOT set NODE_ENV=production as a service env var (it makes `npm install` skip devDeps).
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_URL
-        # Relative to server/prisma/ (created on start; free tier disk is ephemeral)
+        # Relative to server/prisma/ (free tier disk is ephemeral)
         value: file:./prod.db
       - key: UPLOAD_DIR
         value: uploads

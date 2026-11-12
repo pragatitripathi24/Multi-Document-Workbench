@@ -185,13 +185,15 @@ Recommended: **one free Web Service** that serves the API and the built React ap
    - **Start command:** `npm start`
    - **Health check path:** `/api/health`
    - **Plan:** Free
-4. Environment variables (Blueprint sets most of these):
-   - `NODE_ENV=production`
+4. Environment variables (Blueprint sets these — **do not** add `NODE_ENV=production` in the Render dashboard; it skips `devDependencies` and breaks the Vite/TypeScript build):
    - `DATABASE_URL=file:./prod.db`
    - `UPLOAD_DIR=uploads`
    - `MAX_FILE_SIZE_BYTES=10485760`
-5. Deploy. Open `https://<your-service>.onrender.com` — UI and API are on the same URL.
-6. Confirm `https://<your-service>.onrender.com/api/health` returns `{"status":"ok",...}`.
+5. Build command must be: `npm install --include=dev && npm run build`
+6. Deploy. Open `https://<your-service>.onrender.com` — UI and API are on the same URL.
+7. Confirm `https://<your-service>.onrender.com/api/health` returns `{"status":"ok",...}`.
+
+If the build fails with `Could not find a declaration file for module 'react'`, remove `NODE_ENV` from Render **Environment** and clear the build cache, then redeploy.
 
 ### Notes / limitations on free Render
 
