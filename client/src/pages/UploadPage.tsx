@@ -61,12 +61,25 @@ export function UploadPage() {
       const result = await uploadDocuments(queue.map((q) => q.file));
       setUploaded((prev) => [...result.data, ...prev]);
       setQueue([]);
-      toast.success(
-        `Uploaded ${result.data.length} file${result.data.length === 1 ? '' : 's'}`,
-        result.source === 'mock'
-          ? 'Stored in session (API offline). Backend upload lands in Phase 2.'
-          : 'Documents are being processed.',
-      );
+      const failed = result.data.filter((d) => d.status === 'error');
+      const ready = result.data.filter((d) => d.status === 'ready');
+      if (failed.length > 0) {
+        toast.error(
+          `${failed.length} file(s) failed processing`,
+          failed
+            .map((d) => `${d.originalName}: ${d.errorMessage ?? 'error'}`)
+            .join(' · ')
+            .slice(0, 220),
+        );
+      }
+      if (ready.length > 0) {
+        toast.success(
+          `${ready.length} file${ready.length === 1 ? '' : 's'} ready`,
+          result.source === 'mock'
+            ? 'Stored in session (API offline).'
+            : 'Go to Analyze to run comparison.',
+        );
+      }
     } catch {
       toast.error('Upload failed', 'Please try again.');
     } finally {

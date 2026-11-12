@@ -1,5 +1,6 @@
-import { FileSearch, Layers, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { FileSearch, Layers, RefreshCw, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { createAnalysis, getDocuments } from '../api/client';
 import { AnalysisResults } from '../components/analysis/AnalysisResults';
 import { FileTypeBadge, StatusBadge } from '../components/ui/Badge';
@@ -22,24 +23,35 @@ export function AnalyzePage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      const res = await getDocuments();
-      if (cancelled) return;
-      const ready = res.data.filter((d) => d.status === 'ready');
-      setDocuments(ready);
-      setSelected(ready.slice(0, Math.min(3, ready.length)).map((d) => d.id));
-      setLoading(false);
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
+  const loadDocuments = useCallback(async () => {
+    setLoading(true);
+    const res = await getDocuments();
+    setDocuments(res.data);
+    const readyIds = res.data
+      .filter((d) => d.status === 'ready')
+      .map((d) => d.id);
+    setSelected((prev) => {
+      const stillValid = prev.filter((id) => readyIds.includes(id));
+      if (stillValid.length > 0) return stillValid;
+      return readyIds.slice(0, Math.min(3, readyIds.length));
+    });
+    setLoading(false);
   }, []);
 
-  const toggleDoc = (id: string) => {
+  useEffect(() => {
+    void loadDocuments();
+  }, [loadDocuments]);
+
+  const readyDocuments = documents.filter((d) => d.status === 'ready');
+
+  const toggleDoc = (id: string, status: string) => {
+    if (status !== 'ready') {
+      toast.error(
+        'Document not ready',
+        'Only successfully processed documents can be analyzed. Re-upload if status is error.',
+      );
+      return;
+    }
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -51,7 +63,7 @@ export function AnalyzePage() {
       return;
     }
     if (selected.length === 0) {
-      toast.error('Select documents', 'Choose at least one document.');
+      toast.error('Select documents', 'Choose at least one ready document.');
       return;
     }
     if (mode === 'individual' && selected.length !== 1) {
@@ -80,7 +92,7 @@ export function AnalyzePage() {
       toast.success(
         'Analysis complete',
         res.source === 'mock'
-          ? 'Mock result (API offline). Live Mock AI arrives in Phase 4.'
+          ? 'Mock result (API offline).'
           : 'Results are ready.',
       );
     } catch {
@@ -96,13 +108,23 @@ export function AnalyzePage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-navy">
-          Analyze
-        </h1>
-        <p className="mt-1 text-sm text-surface-muted">
-          User-defined prompts for individual or cross-document analysis
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-navy">
+            Analyze
+          </h1>
+          <p className="mt-1 text-sm text-surface-muted">
+            User-defined prompts for individual or cross-document analysis
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => void loadDocuments()}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh list
+        </button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -144,27 +166,42 @@ export function AnalyzePage() {
           <section className="card overflow-hidden">
             <div className="border-b border-surface-border px-5 py-4">
               <h2 className="text-sm font-semibold text-navy">
-                Documents ({selected.length} selected)
+                Documents ({selected.length} selected · {readyDocuments.length}{' '}
+                ready)
               </h2>
             </div>
             {documents.length === 0 ? (
               <EmptyState
                 icon={FileSearch}
-                title="No ready documents"
-                description="Upload and process documents before running analysis."
+                title="No documents yet"
+                description="Upload PDF, CSV, or TXT files first, then refresh this list."
+                action={
+                  <Link to="/upload" className="btn-primary">
+                    Go to Upload
+                  </Link>
+                }
               />
             ) : (
               <ul className="max-h-72 divide-y divide-surface-border overflow-y-auto">
                 {documents.map((doc) => {
                   const checked = selected.includes(doc.id);
+                  const selectable = doc.status === 'ready';
                   return (
                     <li key={doc.id}>
-                      <label className="flex cursor-pointer items-start gap-3 px-5 py-3 hover:bg-surface/50">
+                      <label
+                        className={[
+                          'flex items-start gap-3 px-5 py-3',
+                          selectable
+                            ? 'cursor-pointer hover:bg-surface/50'
+                            : 'cursor-not-allowed opacity-70',
+                        ].join(' ')}
+                      >
                         <input
                           type="checkbox"
                           className="mt-1 h-4 w-4 rounded border-surface-border text-indigo focus:ring-indigo"
                           checked={checked}
-                          onChange={() => toggleDoc(doc.id)}
+                          disabled={!selectable}
+                          onChange={() => toggleDoc(doc.id, doc.status)}
                         />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-navy">
@@ -174,6 +211,16 @@ export function AnalyzePage() {
                             <FileTypeBadge type={doc.fileType} />
                             <StatusBadge status={doc.status} />
                           </div>
+                          {doc.status === 'error' && doc.errorMessage ? (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {doc.errorMessage}
+                            </p>
+                          ) : null}
+                          {doc.status === 'processing' ? (
+                            <p className="mt-1 text-xs text-amber-700">
+                              Still processing — hit Refresh in a moment.
+                            </p>
+                          ) : null}
                         </div>
                       </label>
                     </li>
@@ -187,7 +234,7 @@ export function AnalyzePage() {
             type="button"
             className="btn-primary w-full"
             onClick={() => void runAnalysis()}
-            disabled={running || documents.length === 0}
+            disabled={running || readyDocuments.length === 0}
           >
             <Sparkles className="h-4 w-4" />
             {running ? 'Running analysis…' : 'Run analysis'}
@@ -202,7 +249,7 @@ export function AnalyzePage() {
               <EmptyState
                 icon={Sparkles}
                 title="Results will appear here"
-                description="Configure a prompt, select documents, and run analysis. Findings keep interpretations separate from extracted facts."
+                description="Configure a prompt, select ready documents, and run analysis. Findings keep interpretations separate from extracted facts."
               />
             </div>
           )}

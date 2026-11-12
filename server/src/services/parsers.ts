@@ -1,11 +1,18 @@
 import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { parse as parseCsv } from 'csv-parse/sync';
 import type { DocumentType, ParsedDocument } from '../types.js';
 
-// pdf-parse has no stable ESM types in this setup
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const require = createRequire(import.meta.url);
+
+/**
+ * Use the library entry (not the package root). The package root of `pdf-parse`
+ * executes a debug/test harness that looks for `./test/data/...` and crashes
+ * on Render / production when that file is absent.
+ */
 async function parsePdfBuffer(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default as (
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require('pdf-parse/lib/pdf-parse.js') as (
     data: Buffer,
   ) => Promise<{ text: string }>;
   const result = await pdfParse(buffer);
