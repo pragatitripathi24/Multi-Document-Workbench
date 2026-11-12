@@ -35,15 +35,21 @@ npm install
 ## Development
 
 ```bash
-# Frontend only (Phase 1)
-npm run dev:client
-
-# Backend (available after Phase 2)
+# Terminal 1 – API (Express + Prisma + SQLite)
+npm run db:generate
+npm run db:push
 npm run dev:server
+
+# Terminal 2 – frontend
+npm run dev:client
 ```
 
 - Client: http://localhost:5173
-- API: http://localhost:3001
+- API: http://localhost:3001 (`GET /api/health`)
+
+Sample banking files for upload testing are in `samples/`.
+
+When the API is running, the dashboard badge shows **Live API**. If the API is down, the client falls back to demo data.
 
 ## Build
 

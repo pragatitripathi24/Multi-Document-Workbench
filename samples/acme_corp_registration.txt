@@ -1,0 +1,5 @@
+Company Name: ACME Corporation Ltd
+Registered Address: 12 King Street, London EC2A 4BX
+Registration Number: 09876543
+Incorporation Date: 2018-03-14
+Business activity: Corporate banking services and trade finance.

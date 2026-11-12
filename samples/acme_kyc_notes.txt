@@ -1,0 +1,6 @@
+KYC review for ACME Corporation
+Address on file: 14 King St, London EC2A 4BX
+Reg No: 09876543
+Revenue stated: £4.1M (FY2024)
+Reviewed by: Compliance Ops
+As of: 2024-11-01
