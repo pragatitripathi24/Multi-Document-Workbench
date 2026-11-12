@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Document {
+  id                   String   @id @default(cuid())
+  originalName         String
+  storedName           String
+  mimeType             String
+  fileType             String
+  sizeBytes            Int
+  status               String   @default("pending")
+  errorMessage         String?
+  extractedText        String?
+  extractedTextPreview String?
+  uploadedAt           DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  facts       ExtractedFact[]
+  provenance  DocumentProvenance?
+  analyses    AnalysisDocument[]
+}
+
+model DocumentProvenance {
+  id           String   @id @default(cuid())
+  documentId   String   @unique
+  storagePath  String
+  checksum     String?
+  parser       String?
+  parsedAt     DateTime?
+  createdAt    DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+
+model ExtractedFact {
+  id            String   @id @default(cuid())
+  documentId    String
+  fieldType     String
+  value         String
+  confidence    Float
+  sourceSnippet String
+  pageOrRow     String?
+  createdAt     DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, fieldType])
+}
+
+model Analysis {
+  id               String   @id @default(cuid())
+  prompt           String
+  mode             String
+  summary          String
+  conflictCount    Int      @default(0)
+  missingInfoCount Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  documents AnalysisDocument[]
+  findings  AnalysisFinding[]
+}
+
+model AnalysisDocument {
+  id         String @id @default(cuid())
+  analysisId String
+  documentId String
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisId, documentId])
+}
+
+model AnalysisFinding {
+  id                   String @id @default(cuid())
+  analysisId           String
+  kind                 String
+  fieldType            String
+  title                String
+  detail               String
+  sourceDocumentIds    String
+  sourceDocumentNames  String
+  relatedFactValues    String
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}

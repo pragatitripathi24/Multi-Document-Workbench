@@ -1,0 +1,26 @@
+{
+  "name": "documind",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DocuMind – Multi-Document Intelligence Workbench",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w client",
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "build": "npm run build -w client",
+    "build:client": "npm run build -w client",
+    "build:server": "npm run build -w server",
+    "test": "npm run test -w server --if-present",
+    "lint": "npm run lint -w client --if-present"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node"
+  }
+}
