@@ -8,19 +8,29 @@ dist/
 build/
 *.tsbuildinfo
 
-# Environment
+# Environment / secrets — never commit real credentials
 .env
+.env.*
+!.env.example
+!**/.env.example
 .env.local
 .env.*.local
+*.pem
+*.key
+credentials*.json
+secrets*.json
 
 # Database
 *.db
 *.db-journal
 prisma/*.db
+server/prisma/*.db
+server/prisma/test.db
 
-# Uploads
+# Uploads (user-uploaded files; may contain sensitive content)
 uploads/
 server/uploads/
+**/uploads/**
 
 # Logs / cache
 logs/

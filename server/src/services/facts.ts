@@ -29,7 +29,7 @@ const RULES: PatternRule[] = [
   {
     fieldType: 'revenue',
     regex:
-      /(?:revenue|turnover|annual\s*income|revenue_gbp)\s*[:\-]?\s*[£$]?\s*([0-9][0-9,]*(?:\.\d+)?\s*[MmBbKk]?)/gi,
+      /(?:revenue|turnover|annual\s*income|revenue_gbp)(?:\s+stated|\s+figure|\s+amount)?\s*[:\-]?\s*[£$€]?\s*([0-9][0-9,]*(?:\.\d+)?\s*[MmBbKk]?)/gi,
     confidence: 0.88,
     normalize: (m) => normalizeRevenue(m[1] ?? m[0]),
   },

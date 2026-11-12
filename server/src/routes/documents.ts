@@ -34,9 +34,14 @@ documentsRouter.post('/upload', upload.array('files', 20), async (req, res, next
   try {
     const files = req.files as Express.Multer.File[] | undefined;
     if (!files || files.length === 0) {
+      const filterError = (
+        req as Express.Request & { fileFilterError?: string }
+      ).fileFilterError;
       res.status(400).json({
-        message: 'No files uploaded. Use form field "files".',
-        code: 'NO_FILES',
+        message:
+          filterError ??
+          'No files uploaded. Use form field "files".',
+        code: filterError ? 'INVALID_FILE_TYPE' : 'NO_FILES',
       });
       return;
     }

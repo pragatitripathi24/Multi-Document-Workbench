@@ -17,14 +17,12 @@ const storage = multer.diskStorage({
 export const upload = multer({
   storage,
   limits: { fileSize: config.maxFileSizeBytes, files: 20 },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (req, file, cb) => {
     if (!isAllowedUpload(file.originalname, file.mimetype)) {
-      cb(
-        Object.assign(new Error('Only PDF, CSV, and TXT files are allowed.'), {
-          status: 400,
-          code: 'INVALID_FILE_TYPE',
-        }),
-      );
+      // Reject without throwing — throwing aborts the socket (ECONNRESET in tests/clients)
+      (req as Express.Request & { fileFilterError?: string }).fileFilterError =
+        'Only PDF, CSV, and TXT files are allowed.';
+      cb(null, false);
       return;
     }
     cb(null, true);

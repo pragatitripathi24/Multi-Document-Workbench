@@ -1,0 +1,24 @@
+# Render Blueprint — one free Web Service hosts API + built React UI together.
+# Dashboard: New → Blueprint → connect this repo → apply.
+# Do NOT put secrets in this file. Set env vars in the Render dashboard if needed.
+
+services:
+  - type: web
+    name: documind
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        # Relative to server/prisma/ (created on start; free tier disk is ephemeral)
+        value: file:./prod.db
+      - key: UPLOAD_DIR
+        value: uploads
+      - key: MAX_FILE_SIZE_BYTES
+        value: "10485760"
